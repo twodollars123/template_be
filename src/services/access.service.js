@@ -21,6 +21,48 @@ const RoleShop = {
 };
 
 class AccessService {
+  //v2
+  static handleRefreshTokenV2 = async ({ refreshToken, user, keyStore }) => {
+    console.log("user::", user);
+    console.log("refreshToken::", refreshToken);
+    console.log("keyStore::", keyStore);
+    const { userId, email } = user;
+
+    if (keyStore.refreshTokensUsed.includes(refreshToken)) {
+      await keyTokenService.deleteKeyByUserId(userId);
+      throw new ForbiddenError("Something wrong happen !! Pls relogin");
+    }
+
+    if (keyStore.refreshToken !== refreshToken)
+      throw new NotFoundError("RefreshToken is not valid");
+
+    const foundShop = await findByUserId(new ObjectId(userId));
+    console.log("foundShop::", foundShop);
+
+    if (!foundShop) throw new NotFoundError("userId is not valid");
+
+    //created tokens
+    const tokens = await createTokenPair(
+      { userId, email },
+      keyStore.publicKey,
+      keyStore.privateKey
+    );
+
+    //update
+    await keyStore.updateOne({
+      $set: {
+        refreshToken: tokens.refreshToken,
+      },
+      $addToSet: {
+        refreshTokensUsed: refreshToken,
+      },
+    });
+    return {
+      user,
+      tokens,
+    };
+  };
+  //v1
   static handleRefreshToken = async (refreshToken) => {
     //check this refresh token is used ??
     const foundToken = await keyTokenService.findByRefreshTokenUsed(

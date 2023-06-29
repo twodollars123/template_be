@@ -7,4 +7,8 @@ const findByEmail = async (
   return await shopModel.findOne({ email }).select(select).lean();
 };
 
-module.exports = { findByEmail };
+const findByUserId = async (userId) => {
+  return await shopModel.findOne({ _id: userId }).lean();
+};
+
+module.exports = { findByEmail, findByUserId };

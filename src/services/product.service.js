@@ -13,20 +13,6 @@ class ProductFactory {
     }
   }
 }
-/*
-pro_name: { type: String, required: true },
-    pro_thumb: { type: String, required: true },
-    pro_desc: String,
-    pro_price: { type: Number, required: true },
-    pro_quantity: { type: Number, required: true },
-    pro_type: {
-      type: String,
-      required: true,
-      enum: ["Electronics", "Clothing", "Furniture"],
-    },
-    pro_shop: { type: Schema.Types.ObjectId, ref: "Shop" },
-    pro_attr: { type: Schema.Types.Mixed, required: true },
-*/
 
 class Product {
   constructor({
@@ -49,16 +35,19 @@ class Product {
     this.pro_attr = pro_attr;
   }
 
-  async createProduct() {
-    return await product.create(this);
+  async createProduct(product_id) {
+    return await product.create({ ...this, _id: product_id });
   }
 }
 
 class Clothing extends Product {
   async createProduct() {
-    const newClothing = await clothing.create(this.pro_attr);
+    const newClothing = await clothing.create({
+      ...this.pro_attr,
+      pro_shop: this.pro_shop,
+    });
     if (!newClothing) throw new BadRequestError("Create new clothing error");
-    const newProduct = await super.createProduct();
+    const newProduct = await super.createProduct(newClothing._id);
     if (!newProduct) throw new BadRequestError("Create new product error");
     return newProduct;
   }
@@ -66,9 +55,12 @@ class Clothing extends Product {
 
 class Electronic extends Product {
   async createProduct() {
-    const newElectronic = await electronic.create(this.pro_attr);
+    const newElectronic = await electronic.create({
+      ...this.pro_attr,
+      pro_shop: this.pro_shop,
+    });
     if (!newElectronic) throw new BadRequestError("Create new clothing error");
-    const newProduct = await super.createProduct();
+    const newProduct = await super.createProduct(newElectronic._id);
     if (!newProduct) throw new BadRequestError("Create new product error");
     return newProduct;
   }

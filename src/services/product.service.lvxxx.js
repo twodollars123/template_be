@@ -7,15 +7,18 @@ const {
 const { BadRequestError } = require("../core/error.response");
 
 class ProductFactory {
+  static productRegistry = {};
+
+  static registerProductType(type, classRef) {
+    ProductFactory.productRegistry[type] = classRef;
+  }
+
   static async createProduct(type, payload) {
-    switch (type) {
-      case "Electronics":
-        return new Electronic(payload).createProduct();
-      case "Clothing":
-        return new Clothing(payload).createProduct();
-      default:
-        throw new BadRequestError(`Invalid product type::: ${type}`);
-    }
+    const productClass = ProductFactory.productRegistry[type];
+    if (!productClass)
+      throw new BadRequestError(`Invalid product type::: ${type}`);
+
+    return new productClass(payload).createProduct();
   }
 }
 
@@ -64,7 +67,8 @@ class Electronic extends Product {
       ...this.pro_attr,
       pro_shop: this.pro_shop,
     });
-    if (!newElectronic) throw new BadRequestError("Create new clothing error");
+    if (!newElectronic)
+      throw new BadRequestError("Create new electronic error");
     const newProduct = await super.createProduct(newElectronic._id);
     if (!newProduct) throw new BadRequestError("Create new product error");
     return newProduct;
@@ -77,11 +81,15 @@ class Furniture extends Product {
       ...this.pro_attr,
       pro_shop: this.pro_shop,
     });
-    if (!newFurniture) throw new BadRequestError("Create new clothing error");
+    if (!newFurniture) throw new BadRequestError("Create new furniture error");
     const newProduct = await super.createProduct(newFurniture._id);
     if (!newProduct) throw new BadRequestError("Create new product error");
     return newProduct;
   }
 }
+
+ProductFactory.registerProductType("Electronics", Electronic);
+ProductFactory.registerProductType("Clothing", Clothing);
+ProductFactory.registerProductType("Furniture", Furniture);
 
 module.exports = ProductFactory;
